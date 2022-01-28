@@ -23,7 +23,15 @@ inputs:
   region:
     description: "AWS Region"
     required: true
-    default: "ap-south-1"        
+    default: "ap-south-1"       
+  aws-access-key-id:
+    description: "AWS Access Key"
+    required: true
+    default: ""   
+  aws-secret-access-key:
+    description: "AWS Secret Key"
+    required: true
+    default: ""       
 
 runs:
   using: "composite"
@@ -41,7 +49,8 @@ runs:
         echo "ECS_SERVICE=$ECS_SERVICE" >> $GITHUB_ENV     
         echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV 
         echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV     
-        echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV                                                                   
+        echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV   
+      shell: bash        
     - name: Setting env variables for release branch
       if: ${{ github.ref == 'refs/heads/release' && always() }}
       run: |
@@ -56,6 +65,7 @@ runs:
         echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV 
         echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV     
         echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV     
+      shell: bash              
     - name: Setting env variables for dev branch
       if: ${{ github.ref == 'refs/heads/dev' && always() }}
       run: |
@@ -70,15 +80,16 @@ runs:
         echo "ECS_SERVICE=$ECS_SERVICE" >> $GITHUB_ENV     
         echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV 
         echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV     
-        echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV           
+        echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV   
+      shell: bash              
     - name: Checkout
       uses: actions/checkout@v2
       
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ env.AWS_REGION }}
     - name: Login to Amazon ECR
       id: login-ecr
@@ -86,6 +97,7 @@ runs:
     - name: Set outputs
       id: vars
       run: echo "::set-output name=sha_short::$(git rev-parse --short=11 HEAD)"
+      shell: bash            
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:
@@ -101,12 +113,14 @@ runs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+      shell: bash              
     - name: Geting Latest Task Definition from ECS
       id: ecs-task-def
       run: |
         aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > task-definition.json
         aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name >> $TASK_DEFINITION_IMAGE
         echo "::set-output name=task_definition_image::$TASK_DEFINITION_IMAGE"
+      shell: bash              
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -136,7 +150,8 @@ runs:
         echo "ECS_SERVICE=$ECS_SERVICE" >> $GITHUB_ENV     
         echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV 
         echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV     
-        echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV       
+        echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV  
+      shell: bash              
     - name: Checkout 2
       if: ${{ github.ref == 'refs/heads/release' && always() }}    
       uses: actions/checkout@v2
@@ -145,8 +160,8 @@ runs:
       if: ${{ github.ref == 'refs/heads/release' && always() }}    
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ env.AWS_REGION }}
     - name: Login to Amazon ECR 2
       if: ${{ github.ref == 'refs/heads/release' && always() }}    
@@ -167,11 +182,13 @@ runs:
         docker tag OLD_IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      shell: bash              
     - name: Geting Latest Task Definition from ECS
       id: ecs-task-def-2
       run: |
         aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > task-definition.json
         aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name >> $TASK_DEFINITION_IMAGE
+      shell: bash              
     - name: Fill in the new image ID in the Amazon ECS task definition
       if: ${{ github.ref == 'refs/heads/release' && always() }}    
       id: task-def-2

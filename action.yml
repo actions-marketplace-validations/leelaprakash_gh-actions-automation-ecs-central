@@ -117,9 +117,9 @@ runs:
     - name: Geting Latest Task Definition from ECS
       id: ecs-task-def
       run: |
-        echo "::set-output name=task_definition::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition)"
         aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > /home/runner/work/task-definition.json
         echo "::set-output name=task_definition_image::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name)"
+        aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name
       shell: bash    
     - name: test
       run: |
@@ -132,7 +132,7 @@ runs:
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
         task-definition: /home/runner/work/task-definition.json
-        container-name: ${{ steps.ecs-task-def.outputs.task_definition_image }}
+        container-name: "nginx"
         image: ${{ steps.build-image.outputs.image }}
 
     - name: Deploy Amazon ECS task definition

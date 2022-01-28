@@ -117,14 +117,15 @@ runs:
     - name: Geting Latest Task Definition from ECS
       id: ecs-task-def
       run: |
-        aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > /home/runner/task-definition.json
+        echo "::set-output name=task_definition::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition)"
+        #aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > /home/runner/task-definition.json
         echo "::set-output name=task_definition_image::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name)"
       shell: bash              
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
-        task-definition: /home/runner/task-definition.json 
+        task-definition: ${{ steps.ecs-task-def.outputs.task_definition }} 
         container-name: ${{ steps.ecs-task-def.outputs.task_definition_image }}
         image: ${{ steps.build-image.outputs.image }}
 
@@ -185,7 +186,8 @@ runs:
     - name: Geting Latest Task Definition from ECS
       id: ecs-task-def-2
       run: |
-        aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > /home/runner/task-definition.json
+        echo "::set-output name=task_definition::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition)"
+        #aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > /home/runner/task-definition.json
         echo "::set-output name=task_definition_image::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name)"
       shell: bash              
     - name: Fill in the new image ID in the Amazon ECS task definition
@@ -193,7 +195,7 @@ runs:
       id: task-def-2
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
-        task-definition: /home/runner/task-definition.json
+        task-definition: ${{ steps.ecs-task-def-2.outputs.task_definition }}
         container-name: ${{ steps.ecs-task-def-2.outputs.task_definition_image }}
         image: ${{ steps.build-image-2.outputs.image }}
 

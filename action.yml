@@ -118,8 +118,7 @@ runs:
       id: ecs-task-def
       run: |
         aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > task-definition.json
-        aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name >> $TASK_DEFINITION_IMAGE
-        echo "::set-output name=task_definition_image::$TASK_DEFINITION_IMAGE"
+        echo "::set-output name=task_definition_image::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name)"
       shell: bash              
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
@@ -187,7 +186,7 @@ runs:
       id: ecs-task-def-2
       run: |
         aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > task-definition.json
-        aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name >> $TASK_DEFINITION_IMAGE
+        echo "::set-output name=task_definition_image::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name)"
       shell: bash              
     - name: Fill in the new image ID in the Amazon ECS task definition
       if: ${{ github.ref == 'refs/heads/release' && always() }}    
@@ -195,7 +194,7 @@ runs:
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
         task-definition: task-definition.json
-        container-name: ${{ steps.ecs-task-def.outputs.task_definition_image }}
+        container-name: ${{ steps.ecs-task-def-2.outputs.task_definition_image }}
         image: ${{ steps.build-image-2.outputs.image }}
 
     - name: Deploy Amazon ECS task definition

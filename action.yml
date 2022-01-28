@@ -118,12 +118,12 @@ runs:
       id: ecs-task-def
       run: |
         echo "::set-output name=task_definition::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition)"
-        aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > /github/home/task-definition.json
+        aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > /home/runner/work/task-definition.json
         echo "::set-output name=task_definition_image::$(aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition.containerDefinitions[0].name)"
       shell: bash    
     - name: test
       run: |
-        ls -lrta /github/home/
+        ls -lrta /home/runner/work/
         whoami
         ls -lrta
       shell: bash        
@@ -131,7 +131,7 @@ runs:
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
-        task-definition: /github/home/task-definition.json
+        task-definition: /home/runner/work/task-definition.json
         container-name: ${{ steps.ecs-task-def.outputs.task_definition_image }}
         image: ${{ steps.build-image.outputs.image }}
 
